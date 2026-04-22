@@ -13,7 +13,7 @@
 <body>
 
 <!-- ═══════════════════════════════════════════════════════════════════
-     LANDING PAGE — PDF Selection
+     LANDING PAGE — Quiz Selection + Upload
      ═══════════════════════════════════════════════════════════════════ -->
 <div id="landing-page" class="page active">
     <div class="landing-container">
@@ -33,14 +33,68 @@
         </div>
 
         <div class="pdf-section">
-            <h2>Pilih Soal</h2>
-            <p class="pdf-hint">Pilih file PDF yang berisi soal untuk mulai mengerjakan</p>
-            <div id="pdf-list" class="pdf-grid">
+            <div class="section-header">
+                <h2>Daftar Soal</h2>
+                <button id="btn-upload-open" class="btn-upload-open" title="Upload PDF Baru">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    Upload PDF
+                </button>
+            </div>
+            <p class="pdf-hint">Pilih soal untuk mulai mengerjakan</p>
+            <div id="quiz-list" class="pdf-grid">
                 <div class="loading-spinner">
                     <div class="spinner"></div>
                     <span>Memuat daftar soal...</span>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Upload Overlay -->
+    <div class="upload-overlay" id="upload-overlay">
+        <div class="upload-panel">
+            <div class="upload-panel-header">
+                <h3>Upload Soal Baru</h3>
+                <button id="btn-upload-close" class="btn-icon btn-close-nav">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <p class="upload-hint">Upload file PDF dengan format tabel: No | Soal | Pilihan Ganda | Penjelasan</p>
+
+            <form id="upload-form">
+                <div class="form-group">
+                    <label for="upload-name">Nama Soal</label>
+                    <input type="text" id="upload-name" placeholder="Contoh: Aspek Hukum Kredit Part 2" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>File PDF</label>
+                    <div class="dropzone" id="dropzone">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="12" y1="18" x2="12" y2="12"/>
+                            <polyline points="9 15 12 12 15 15"/>
+                        </svg>
+                        <span class="dropzone-text">Klik atau drag file PDF ke sini</span>
+                        <span class="dropzone-file" id="dropzone-filename"></span>
+                        <input type="file" id="upload-file" accept=".pdf" hidden>
+                    </div>
+                </div>
+                <button type="submit" id="btn-upload-submit" class="btn-upload-submit" disabled>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    <span>Upload & Import Soal</span>
+                </button>
+            </form>
         </div>
     </div>
 </div>
@@ -94,9 +148,7 @@
             <p class="question-text" id="question-text"></p>
         </div>
 
-        <div class="choices-container" id="choices-container">
-            <!-- Choices rendered dynamically -->
-        </div>
+        <div class="choices-container" id="choices-container"></div>
 
         <!-- Explanation Panel -->
         <div class="explanation-panel" id="explanation-panel">
@@ -141,9 +193,7 @@
                 <span class="legend-item"><span class="legend-dot incorrect"></span>Salah</span>
                 <span class="legend-item"><span class="legend-dot current"></span>Saat Ini</span>
             </div>
-            <div class="navigator-grid" id="navigator-grid">
-                <!-- Dynamically filled -->
-            </div>
+            <div class="navigator-grid" id="navigator-grid"></div>
             <button id="btn-finish" class="btn-finish">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
@@ -194,12 +244,9 @@
             </div>
         </div>
 
-        <!-- Review List -->
         <div class="review-section">
             <h3>Review Jawaban</h3>
-            <div id="review-list" class="review-list">
-                <!-- Dynamically filled -->
-            </div>
+            <div id="review-list" class="review-list"></div>
         </div>
 
         <div class="results-actions">
@@ -232,12 +279,11 @@
     let state = {
         questions: [],
         currentIndex: 0,
-        answers: {},      // { questionIndex: selectedLabel }
-        filename: '',
+        answers: {},
+        quizId: null,
         displayName: '',
     };
 
-    // ─── DOM References ─────────────────────────────────────────────
     const $ = id => document.getElementById(id);
     const pages = {
         landing: $('landing-page'),
@@ -245,85 +291,90 @@
         results: $('results-page'),
     };
 
-    // ─── Page Navigation ────────────────────────────────────────────
     function showPage(name) {
         Object.values(pages).forEach(p => p.classList.remove('active'));
         pages[name].classList.add('active');
         window.scrollTo(0, 0);
     }
 
-    // ─── Load PDF List ──────────────────────────────────────────────
-    async function loadPDFList() {
+    // ─── Load Quiz List (from database) ─────────────────────────────
+    async function loadQuizList() {
         try {
-            const res = await fetch('/api/pdfs');
+            const res = await fetch('/api/quizzes');
             const data = await res.json();
-            renderPDFList(data.pdfs);
+            renderQuizList(data.quizzes);
         } catch (err) {
-            $('pdf-list').innerHTML = `
+            $('quiz-list').innerHTML = `
                 <div class="error-msg">
-                    <p>⚠ Gagal memuat daftar PDF</p>
+                    <p>Gagal memuat daftar soal</p>
                     <p class="error-detail">${err.message}</p>
                 </div>`;
         }
     }
 
-    function renderPDFList(pdfs) {
-        if (!pdfs.length) {
-            $('pdf-list').innerHTML = `
+    function renderQuizList(quizzes) {
+        if (!quizzes.length) {
+            $('quiz-list').innerHTML = `
                 <div class="empty-msg">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                         <polyline points="14 2 14 8 20 8"/>
                     </svg>
-                    <p>Tidak ada file PDF ditemukan</p>
-                    <p class="empty-hint">Letakkan file PDF soal di folder yang sama dengan server</p>
+                    <p>Belum ada soal</p>
+                    <p class="empty-hint">Upload file PDF untuk menambahkan soal baru</p>
                 </div>`;
             return;
         }
 
-        $('pdf-list').innerHTML = pdfs.map(pdf => `
-            <button class="pdf-card" data-filename="${pdf.filename}" onclick="window.__selectPDF('${pdf.filename}', '${pdf.display_name}')">
-                <div class="pdf-card-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                        <line x1="16" y1="13" x2="8" y2="13"/>
-                        <line x1="16" y1="17" x2="8" y2="17"/>
-                        <polyline points="10 9 9 9 8 9"/>
+        $('quiz-list').innerHTML = quizzes.map(q => `
+            <div class="pdf-card-wrapper">
+                <button class="pdf-card" data-id="${q.id}" onclick="window.__selectQuiz(${q.id}, '${q.name.replace(/'/g, "\\'")}')">
+                    <div class="pdf-card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                            <polyline points="10 9 9 9 8 9"/>
+                        </svg>
+                    </div>
+                    <div class="pdf-card-info">
+                        <span class="pdf-card-name">${q.name}</span>
+                        <span class="pdf-card-size">${q.total_questions} soal</span>
+                    </div>
+                    <div class="pdf-card-arrow">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <path d="M9 18l6-6-6-6"/>
+                        </svg>
+                    </div>
+                </button>
+                <button class="btn-delete-quiz" title="Hapus soal ini" onclick="window.__deleteQuiz(${q.id}, '${q.name.replace(/'/g, "\\'")}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                     </svg>
-                </div>
-                <div class="pdf-card-info">
-                    <span class="pdf-card-name">${pdf.display_name}</span>
-                    <span class="pdf-card-size">${pdf.size_kb} KB</span>
-                </div>
-                <div class="pdf-card-arrow">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-                        <path d="M9 18l6-6-6-6"/>
-                    </svg>
-                </div>
-            </button>
+                </button>
+            </div>
         `).join('');
     }
 
-    // ─── Select PDF & Load Questions ────────────────────────────────
-    window.__selectPDF = async function(filename, displayName) {
-        // Show loading state on the card
-        const card = document.querySelector(`[data-filename="${filename}"]`);
+    // ─── Select Quiz & Load Questions ───────────────────────────────
+    window.__selectQuiz = async function(quizId, displayName) {
+        const card = document.querySelector(`[data-id="${quizId}"]`);
         if (card) {
             card.classList.add('loading');
             card.querySelector('.pdf-card-arrow').innerHTML = '<div class="spinner-sm"></div>';
         }
 
         try {
-            const res = await fetch(`/api/questions/${encodeURIComponent(filename)}`);
+            const res = await fetch(`/api/quizzes/${quizId}`);
             const data = await res.json();
-
             if (data.error) throw new Error(data.error);
 
             state.questions = data.questions;
             state.currentIndex = 0;
             state.answers = {};
-            state.filename = filename;
+            state.quizId = quizId;
             state.displayName = data.display_name;
 
             $('quiz-title').textContent = data.display_name;
@@ -342,6 +393,128 @@
         }
     };
 
+    // ─── Delete Quiz ────────────────────────────────────────────────
+    window.__deleteQuiz = async function(quizId, name) {
+        if (!confirm(`Hapus "${name}"?\nSemua soal di dalamnya akan dihapus permanen.`)) return;
+
+        try {
+            const res = await fetch(`/api/quizzes/${quizId}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (data.success) {
+                loadQuizList();
+            } else {
+                alert('Gagal menghapus: ' + (data.error || 'Unknown error'));
+            }
+        } catch (err) {
+            alert('Gagal menghapus: ' + err.message);
+        }
+    };
+
+    // ─── Upload ─────────────────────────────────────────────────────
+    let selectedFile = null;
+
+    $('btn-upload-open').addEventListener('click', () => {
+        $('upload-overlay').classList.add('visible');
+    });
+
+    $('btn-upload-close').addEventListener('click', () => {
+        $('upload-overlay').classList.remove('visible');
+        resetUploadForm();
+    });
+
+    $('upload-overlay').addEventListener('click', (e) => {
+        if (e.target === $('upload-overlay')) {
+            $('upload-overlay').classList.remove('visible');
+            resetUploadForm();
+        }
+    });
+
+    // Dropzone
+    const dropzone = $('dropzone');
+    dropzone.addEventListener('click', () => $('upload-file').click());
+
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.classList.add('dragover');
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.classList.remove('dragover');
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file && file.name.toLowerCase().endsWith('.pdf')) {
+            handleFileSelect(file);
+        } else {
+            alert('File harus berformat PDF');
+        }
+    });
+
+    $('upload-file').addEventListener('change', (e) => {
+        if (e.target.files[0]) handleFileSelect(e.target.files[0]);
+    });
+
+    function handleFileSelect(file) {
+        selectedFile = file;
+        $('dropzone-filename').textContent = file.name;
+        dropzone.classList.add('has-file');
+        $('btn-upload-submit').disabled = false;
+
+        // Auto-fill name if empty
+        if (!$('upload-name').value.trim()) {
+            $('upload-name').value = file.name.replace(/\.pdf$/i, '');
+        }
+    }
+
+    function resetUploadForm() {
+        selectedFile = null;
+        $('upload-name').value = '';
+        $('upload-file').value = '';
+        $('dropzone-filename').textContent = '';
+        dropzone.classList.remove('has-file');
+        $('btn-upload-submit').disabled = true;
+        $('btn-upload-submit').classList.remove('uploading');
+        $('btn-upload-submit').querySelector('span').textContent = 'Upload & Import Soal';
+    }
+
+    $('upload-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!selectedFile) return;
+
+        const btn = $('btn-upload-submit');
+        btn.disabled = true;
+        btn.classList.add('uploading');
+        btn.querySelector('span').textContent = 'Mengupload & memproses...';
+
+        const formData = new FormData();
+        formData.append('pdf', selectedFile);
+        formData.append('name', $('upload-name').value.trim());
+
+        try {
+            const res = await fetch('/api/upload', { method: 'POST', body: formData });
+            const data = await res.json();
+
+            if (data.success) {
+                $('upload-overlay').classList.remove('visible');
+                resetUploadForm();
+                loadQuizList();
+            } else {
+                alert('Gagal: ' + data.error);
+                btn.disabled = false;
+                btn.classList.remove('uploading');
+                btn.querySelector('span').textContent = 'Upload & Import Soal';
+            }
+        } catch (err) {
+            alert('Error: ' + err.message);
+            btn.disabled = false;
+            btn.classList.remove('uploading');
+            btn.querySelector('span').textContent = 'Upload & Import Soal';
+        }
+    });
+
     // ─── Render Question ────────────────────────────────────────────
     function renderQuestion() {
         const q = state.questions[state.currentIndex];
@@ -350,17 +523,14 @@
         const answered = state.answers.hasOwnProperty(state.currentIndex);
         const userAnswer = state.answers[state.currentIndex];
 
-        // Question
         $('question-number').textContent = `Soal ${q.number}`;
         $('question-text').textContent = q.question;
 
-        // Animate card
         const card = $('question-card');
         card.classList.remove('animate-in');
-        void card.offsetWidth; // Force reflow
+        void card.offsetWidth;
         card.classList.add('animate-in');
 
-        // Choices
         const container = $('choices-container');
         container.innerHTML = q.choices.map((c, i) => {
             let extraClass = '';
@@ -370,52 +540,47 @@
                 else extraClass = 'dimmed';
             }
             return `
-                <button class="choice-btn ${extraClass}" 
-                        data-label="${c.label}" 
+                <button class="choice-btn ${extraClass}"
+                        data-label="${c.label}"
                         ${answered ? 'disabled' : ''}
                         style="animation-delay: ${i * 0.06}s"
                         onclick="window.__selectAnswer('${c.label}')">
                     <span class="choice-label">${c.label}</span>
                     <span class="choice-text">${c.text}</span>
-                    ${answered && c.label === q.correct_answer ? '<span class="choice-check">✓</span>' : ''}
-                    ${answered && c.label === userAnswer && c.label !== q.correct_answer ? '<span class="choice-cross">✗</span>' : ''}
+                    ${answered && c.label === q.correct_answer ? '<span class="choice-check">&#10003;</span>' : ''}
+                    ${answered && c.label === userAnswer && c.label !== q.correct_answer ? '<span class="choice-cross">&#10007;</span>' : ''}
                 </button>`;
         }).join('');
 
-        // Explanation
         const panel = $('explanation-panel');
         if (answered) {
             const isCorrect = userAnswer === q.correct_answer;
             panel.classList.add('visible');
             panel.classList.toggle('correct', isCorrect);
             panel.classList.toggle('incorrect', !isCorrect);
-            $('explanation-icon').innerHTML = isCorrect 
+            $('explanation-icon').innerHTML = isCorrect
                 ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="22" height="22"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>'
                 : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="22" height="22"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
-            $('explanation-title').textContent = isCorrect ? 'Jawaban Benar!' : `Jawaban Salah — Yang benar: ${q.correct_answer}`;
+            $('explanation-title').textContent = isCorrect ? 'Jawaban Benar!' : `Jawaban Salah \u2014 Yang benar: ${q.correct_answer}`;
             $('explanation-text').textContent = q.explanation;
         } else {
             panel.classList.remove('visible', 'correct', 'incorrect');
         }
 
-        // Nav buttons
         $('btn-prev').disabled = state.currentIndex === 0;
-        $('btn-next').textContent = state.currentIndex === state.questions.length - 1 ? 'Lihat Hasil' : '';
-        $('btn-next').innerHTML = state.currentIndex === state.questions.length - 1 
-            ? `Lihat Hasil <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`
-            : `Selanjutnya <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M9 18l6-6-6-6"/></svg>`;
+        $('btn-next').innerHTML = state.currentIndex === state.questions.length - 1
+            ? 'Lihat Hasil <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>'
+            : 'Selanjutnya <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M9 18l6-6-6-6"/></svg>';
 
         updateStats();
     }
 
-    // ─── Select Answer ──────────────────────────────────────────────
     window.__selectAnswer = function(label) {
         if (state.answers.hasOwnProperty(state.currentIndex)) return;
         state.answers[state.currentIndex] = label;
         renderQuestion();
     };
 
-    // ─── Update Stats ───────────────────────────────────────────────
     function updateStats() {
         const total = state.questions.length;
         const answered = Object.keys(state.answers).length;
@@ -426,15 +591,12 @@
         $('stat-progress').querySelector('span:last-child').textContent = `${answered}/${total}`;
         $('stat-score').querySelector('span:last-child').textContent = `Skor: ${correct}`;
 
-        // Progress bar
         const pct = total ? (answered / total * 100) : 0;
         $('progress-bar').style.width = pct + '%';
     }
 
-    // ─── Navigator Grid ────────────────────────────────────────────
     function renderNavigator() {
-        const grid = $('navigator-grid');
-        grid.innerHTML = state.questions.map((q, i) => {
+        $('navigator-grid').innerHTML = state.questions.map((q, i) => {
             let status = 'unanswered';
             if (i === state.currentIndex) status = 'current';
             else if (state.answers.hasOwnProperty(i)) {
@@ -450,7 +612,6 @@
         $('navigator-overlay').classList.remove('visible');
     };
 
-    // ─── Results Page ───────────────────────────────────────────────
     function showResults() {
         const total = state.questions.length;
         const answered = Object.keys(state.answers).length;
@@ -467,34 +628,26 @@
         $('result-unanswered').textContent = unanswered;
         $('score-percent').textContent = percent + '%';
 
-        // Animate score ring
-        const circumference = 2 * Math.PI * 52; // r=52
+        const circumference = 2 * Math.PI * 52;
         const offset = circumference - (percent / 100 * circumference);
-        setTimeout(() => {
-            $('score-ring').style.strokeDashoffset = offset;
-        }, 300);
+        setTimeout(() => { $('score-ring').style.strokeDashoffset = offset; }, 300);
 
-        // Review list
-        const reviewHTML = state.questions.map((q, i) => {
+        $('review-list').innerHTML = state.questions.map((q, i) => {
             const userAns = state.answers[i] || null;
             const isCorrect = userAns === q.correct_answer;
             const statusClass = !userAns ? 'review-unanswered' : (isCorrect ? 'review-correct' : 'review-incorrect');
-            const statusIcon = !userAns ? '○' : (isCorrect ? '✓' : '✗');
-            
+            const statusIcon = !userAns ? '&#9675;' : (isCorrect ? '&#10003;' : '&#10007;');
             return `
                 <div class="review-item ${statusClass}">
                     <div class="review-item-header">
                         <span class="review-status-icon">${statusIcon}</span>
                         <span class="review-q-number">Soal ${q.number}</span>
-                        ${userAns ? `<span class="review-answer">Jawaban Anda: ${userAns} ${!isCorrect ? `| Benar: ${q.correct_answer}` : ''}</span>` : '<span class="review-answer">Belum Dijawab</span>'}
+                        ${userAns ? `<span class="review-answer">Jawaban Anda: ${userAns} ${!isCorrect ? '| Benar: ' + q.correct_answer : ''}</span>` : '<span class="review-answer">Belum Dijawab</span>'}
                     </div>
                     <p class="review-question">${q.question}</p>
-                    <div class="review-explanation">
-                        <strong>Penjelasan:</strong> ${q.explanation}
-                    </div>
+                    <div class="review-explanation"><strong>Penjelasan:</strong> ${q.explanation}</div>
                 </div>`;
         }).join('');
-        $('review-list').innerHTML = reviewHTML;
 
         showPage('results');
     }
@@ -507,77 +660,41 @@
     });
 
     $('btn-prev').addEventListener('click', () => {
-        if (state.currentIndex > 0) {
-            state.currentIndex--;
-            renderQuestion();
-        }
+        if (state.currentIndex > 0) { state.currentIndex--; renderQuestion(); }
     });
 
     $('btn-next').addEventListener('click', () => {
-        if (state.currentIndex < state.questions.length - 1) {
-            state.currentIndex++;
-            renderQuestion();
-        } else {
-            showResults();
-        }
+        if (state.currentIndex < state.questions.length - 1) { state.currentIndex++; renderQuestion(); }
+        else { showResults(); }
     });
 
-    $('btn-navigator').addEventListener('click', () => {
-        renderNavigator();
-        $('navigator-overlay').classList.add('visible');
-    });
-
-    $('btn-close-nav').addEventListener('click', () => {
-        $('navigator-overlay').classList.remove('visible');
-    });
-
-    $('navigator-overlay').addEventListener('click', (e) => {
-        if (e.target === $('navigator-overlay')) {
-            $('navigator-overlay').classList.remove('visible');
-        }
-    });
-
-    $('btn-finish').addEventListener('click', () => {
-        $('navigator-overlay').classList.remove('visible');
-        showResults();
-    });
+    $('btn-navigator').addEventListener('click', () => { renderNavigator(); $('navigator-overlay').classList.add('visible'); });
+    $('btn-close-nav').addEventListener('click', () => { $('navigator-overlay').classList.remove('visible'); });
+    $('navigator-overlay').addEventListener('click', (e) => { if (e.target === $('navigator-overlay')) $('navigator-overlay').classList.remove('visible'); });
+    $('btn-finish').addEventListener('click', () => { $('navigator-overlay').classList.remove('visible'); showResults(); });
 
     $('btn-retry').addEventListener('click', () => {
         state.currentIndex = 0;
         state.answers = {};
-        // Reset score ring
         $('score-ring').style.strokeDashoffset = 326.73;
-        updateStats();
-        renderQuestion();
-        showPage('quiz');
+        updateStats(); renderQuestion(); showPage('quiz');
     });
 
     $('btn-home').addEventListener('click', () => {
-        // Reset score ring
         $('score-ring').style.strokeDashoffset = 326.73;
-        showPage('landing');
-        loadPDFList();
+        showPage('landing'); loadQuizList();
     });
 
-    // Keyboard navigation
     document.addEventListener('keydown', (e) => {
         if (!pages.quiz.classList.contains('active')) return;
         if ($('navigator-overlay').classList.contains('visible')) return;
-
-        if (e.key === 'ArrowLeft' && state.currentIndex > 0) {
-            state.currentIndex--;
-            renderQuestion();
-        } else if (e.key === 'ArrowRight' && state.currentIndex < state.questions.length - 1) {
-            state.currentIndex++;
-            renderQuestion();
-        } else if (['a','b','c','d','A','B','C','D'].includes(e.key)) {
-            window.__selectAnswer(e.key.toUpperCase());
-        }
+        if (e.key === 'ArrowLeft' && state.currentIndex > 0) { state.currentIndex--; renderQuestion(); }
+        else if (e.key === 'ArrowRight' && state.currentIndex < state.questions.length - 1) { state.currentIndex++; renderQuestion(); }
+        else if (['a','b','c','d','A','B','C','D'].includes(e.key)) { window.__selectAnswer(e.key.toUpperCase()); }
     });
 
     // ─── Init ───────────────────────────────────────────────────────
-    loadPDFList();
-
+    loadQuizList();
 })();
 </script>
 

@@ -1227,3 +1227,249 @@ body::before {
     background: rgba(99, 102, 241, 0.3);
     color: white;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   SECTION HEADER + UPLOAD BUTTON
+   ═══════════════════════════════════════════════════════════════════ */
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.section-header h2 {
+    margin-bottom: 0;
+}
+
+.btn-upload-open {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: var(--gradient-primary);
+    border: none;
+    border-radius: var(--radius-md);
+    color: white;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+}
+
+.btn-upload-open:hover {
+    box-shadow: var(--shadow-glow-indigo);
+    transform: translateY(-1px);
+}
+
+/* ─── PDF Card Wrapper (with delete button) ───────────────────────── */
+.pdf-card-wrapper {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+}
+
+.pdf-card-wrapper .pdf-card {
+    flex: 1;
+    border-radius: var(--radius-lg) var(--radius-sm) var(--radius-sm) var(--radius-lg);
+}
+
+.btn-delete-quiz {
+    flex-shrink: 0;
+    width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-glass);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-sm) var(--radius-lg) var(--radius-lg) var(--radius-sm);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    font-family: inherit;
+}
+
+.btn-delete-quiz:hover {
+    background: var(--accent-rose-soft);
+    border-color: rgba(244, 63, 94, 0.3);
+    color: var(--accent-rose);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   UPLOAD OVERLAY
+   ═══════════════════════════════════════════════════════════════════ */
+.upload-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-normal);
+}
+
+.upload-overlay.visible {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.upload-panel {
+    width: 90%;
+    max-width: 480px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-xl);
+    padding: 28px;
+    transform: scale(0.95) translateY(10px);
+    transition: transform 0.35s var(--ease-out);
+}
+
+.upload-overlay.visible .upload-panel {
+    transform: scale(1) translateY(0);
+}
+
+.upload-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.upload-panel-header h3 {
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.upload-hint {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+    line-height: 1.5;
+}
+
+/* ─── Form Elements ───────────────────────────────────────────────── */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.form-group input[type="text"] {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--bg-glass);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.9rem;
+    transition: all var(--transition-fast);
+    outline: none;
+}
+
+.form-group input[type="text"]:focus {
+    border-color: var(--accent-indigo);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.form-group input[type="text"]::placeholder {
+    color: var(--text-muted);
+}
+
+/* ─── Dropzone ────────────────────────────────────────────────────── */
+.dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 32px 24px;
+    border: 2px dashed var(--border-glass-hover);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.dropzone:hover, .dropzone.dragover {
+    border-color: var(--accent-indigo);
+    background: rgba(99, 102, 241, 0.05);
+    color: var(--accent-indigo);
+}
+
+.dropzone.has-file {
+    border-color: var(--accent-emerald);
+    background: var(--accent-emerald-soft);
+}
+
+.dropzone.has-file svg {
+    color: var(--accent-emerald);
+}
+
+.dropzone-text {
+    font-size: 0.85rem;
+}
+
+.dropzone.has-file .dropzone-text {
+    display: none;
+}
+
+.dropzone-file {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--accent-emerald);
+}
+
+.dropzone:not(.has-file) .dropzone-file {
+    display: none;
+}
+
+/* ─── Upload Submit Button ────────────────────────────────────────── */
+.btn-upload-submit {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px;
+    background: var(--gradient-primary);
+    border: none;
+    border-radius: var(--radius-md);
+    color: white;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+}
+
+.btn-upload-submit:hover:not(:disabled) {
+    box-shadow: var(--shadow-glow-indigo);
+    transform: translateY(-1px);
+}
+
+.btn-upload-submit:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.btn-upload-submit.uploading {
+    opacity: 0.7;
+    cursor: wait;
+}
