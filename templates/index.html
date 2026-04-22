@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Platform pengerjaan soal interaktif dari file PDF dengan feedback langsung dan penjelasan detail.">
+    <title>QuizMaster — Platform Pengerjaan Soal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     LANDING PAGE — PDF Selection
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="landing-page" class="page active">
+    <div class="landing-container">
+        <div class="landing-header">
+            <div class="logo-icon">
+                <svg viewBox="0 0 48 48" fill="none">
+                    <rect x="4" y="4" width="40" height="40" rx="12" fill="url(#grad1)"/>
+                    <path d="M16 14h16v2H16zm0 6h16v2H16zm0 6h10v2H16zm20 6l-6-4v8l6-4z" fill="white" opacity="0.9"/>
+                    <defs><linearGradient id="grad1" x1="0" y1="0" x2="48" y2="48">
+                        <stop offset="0%" stop-color="#6366f1"/>
+                        <stop offset="100%" stop-color="#8b5cf6"/>
+                    </linearGradient></defs>
+                </svg>
+            </div>
+            <h1>QuizMaster</h1>
+            <p class="landing-subtitle">Platform Pengerjaan Soal Interaktif</p>
+        </div>
+
+        <div class="pdf-section">
+            <h2>Pilih Soal</h2>
+            <p class="pdf-hint">Pilih file PDF yang berisi soal untuk mulai mengerjakan</p>
+            <div id="pdf-list" class="pdf-grid">
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <span>Memuat daftar soal...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     QUIZ PAGE — Active Quiz
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="quiz-page" class="page">
+    <!-- Top Bar -->
+    <header class="quiz-header">
+        <button id="btn-back" class="btn-icon" title="Kembali">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+        </button>
+        <div class="quiz-title-bar">
+            <h2 id="quiz-title">Nama Soal</h2>
+            <div class="quiz-stats">
+                <span id="stat-progress" class="stat-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+                        <rect x="9" y="3" width="6" height="4" rx="1"/>
+                    </svg>
+                    <span>0/0</span>
+                </span>
+                <span id="stat-score" class="stat-badge score-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                    </svg>
+                    <span>Skor: 0</span>
+                </span>
+            </div>
+        </div>
+        <button id="btn-navigator" class="btn-icon" title="Navigator Soal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+            </svg>
+        </button>
+    </header>
+
+    <!-- Progress Bar -->
+    <div class="progress-container">
+        <div id="progress-bar" class="progress-bar" style="width: 0%"></div>
+    </div>
+
+    <!-- Question Area -->
+    <main class="quiz-main">
+        <div class="question-card" id="question-card">
+            <div class="question-number-badge" id="question-number">Soal 1</div>
+            <p class="question-text" id="question-text"></p>
+        </div>
+
+        <div class="choices-container" id="choices-container">
+            <!-- Choices rendered dynamically -->
+        </div>
+
+        <!-- Explanation Panel -->
+        <div class="explanation-panel" id="explanation-panel">
+            <div class="explanation-header" id="explanation-header">
+                <div class="explanation-icon" id="explanation-icon"></div>
+                <span id="explanation-title">Penjelasan</span>
+            </div>
+            <p class="explanation-text" id="explanation-text"></p>
+        </div>
+
+        <!-- Navigation -->
+        <div class="quiz-nav">
+            <button id="btn-prev" class="btn-nav btn-prev" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <path d="M15 18l-6-6 6-6"/>
+                </svg>
+                Sebelumnya
+            </button>
+            <button id="btn-next" class="btn-nav btn-next">
+                Selanjutnya
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <path d="M9 18l6-6-6-6"/>
+                </svg>
+            </button>
+        </div>
+    </main>
+
+    <!-- Question Navigator Overlay -->
+    <div class="navigator-overlay" id="navigator-overlay">
+        <div class="navigator-panel">
+            <div class="navigator-header">
+                <h3>Navigator Soal</h3>
+                <button id="btn-close-nav" class="btn-icon btn-close-nav">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="navigator-legend">
+                <span class="legend-item"><span class="legend-dot unanswered"></span>Belum Dijawab</span>
+                <span class="legend-item"><span class="legend-dot correct"></span>Benar</span>
+                <span class="legend-item"><span class="legend-dot incorrect"></span>Salah</span>
+                <span class="legend-item"><span class="legend-dot current"></span>Saat Ini</span>
+            </div>
+            <div class="navigator-grid" id="navigator-grid">
+                <!-- Dynamically filled -->
+            </div>
+            <button id="btn-finish" class="btn-finish">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                Selesai & Lihat Hasil
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     RESULTS PAGE — Score Summary
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="results-page" class="page">
+    <div class="results-container">
+        <div class="results-header">
+            <div class="results-score-circle" id="results-score-circle">
+                <svg viewBox="0 0 120 120">
+                    <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="8"/>
+                    <circle id="score-ring" cx="60" cy="60" r="52" fill="none" stroke="url(#scoreGrad)" stroke-width="8"
+                            stroke-dasharray="326.73" stroke-dashoffset="326.73" stroke-linecap="round"
+                            transform="rotate(-90 60 60)"/>
+                    <defs><linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#34d399"/>
+                        <stop offset="100%" stop-color="#6366f1"/>
+                    </linearGradient></defs>
+                </svg>
+                <div class="score-text">
+                    <span id="score-percent" class="score-percent">0%</span>
+                    <span class="score-label">Skor Anda</span>
+                </div>
+            </div>
+            <h2 id="results-title">Hasil Pengerjaan</h2>
+            <div class="results-stats-row">
+                <div class="result-stat-card correct-card">
+                    <span class="result-stat-num" id="result-correct">0</span>
+                    <span class="result-stat-label">Benar</span>
+                </div>
+                <div class="result-stat-card incorrect-card">
+                    <span class="result-stat-num" id="result-incorrect">0</span>
+                    <span class="result-stat-label">Salah</span>
+                </div>
+                <div class="result-stat-card unanswered-card">
+                    <span class="result-stat-num" id="result-unanswered">0</span>
+                    <span class="result-stat-label">Belum Dijawab</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Review List -->
+        <div class="review-section">
+            <h3>Review Jawaban</h3>
+            <div id="review-list" class="review-list">
+                <!-- Dynamically filled -->
+            </div>
+        </div>
+
+        <div class="results-actions">
+            <button id="btn-retry" class="btn-action btn-retry">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <polyline points="23 4 23 10 17 10"/>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                </svg>
+                Ulangi Soal
+            </button>
+            <button id="btn-home" class="btn-action btn-home">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+                Pilih Soal Lain
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     JAVASCRIPT
+     ═══════════════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+    'use strict';
+
+    // ─── State ──────────────────────────────────────────────────────
+    let state = {
+        questions: [],
+        currentIndex: 0,
+        answers: {},      // { questionIndex: selectedLabel }
+        filename: '',
+        displayName: '',
+    };
+
+    // ─── DOM References ─────────────────────────────────────────────
+    const $ = id => document.getElementById(id);
+    const pages = {
+        landing: $('landing-page'),
+        quiz: $('quiz-page'),
+        results: $('results-page'),
+    };
+
+    // ─── Page Navigation ────────────────────────────────────────────
+    function showPage(name) {
+        Object.values(pages).forEach(p => p.classList.remove('active'));
+        pages[name].classList.add('active');
+        window.scrollTo(0, 0);
+    }
+
+    // ─── Load PDF List ──────────────────────────────────────────────
+    async function loadPDFList() {
+        try {
+            const res = await fetch('/api/pdfs');
+            const data = await res.json();
+            renderPDFList(data.pdfs);
+        } catch (err) {
+            $('pdf-list').innerHTML = `
+                <div class="error-msg">
+                    <p>⚠ Gagal memuat daftar PDF</p>
+                    <p class="error-detail">${err.message}</p>
+                </div>`;
+        }
+    }
+
+    function renderPDFList(pdfs) {
+        if (!pdfs.length) {
+            $('pdf-list').innerHTML = `
+                <div class="empty-msg">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                    <p>Tidak ada file PDF ditemukan</p>
+                    <p class="empty-hint">Letakkan file PDF soal di folder yang sama dengan server</p>
+                </div>`;
+            return;
+        }
+
+        $('pdf-list').innerHTML = pdfs.map(pdf => `
+            <button class="pdf-card" data-filename="${pdf.filename}" onclick="window.__selectPDF('${pdf.filename}', '${pdf.display_name}')">
+                <div class="pdf-card-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                        <polyline points="10 9 9 9 8 9"/>
+                    </svg>
+                </div>
+                <div class="pdf-card-info">
+                    <span class="pdf-card-name">${pdf.display_name}</span>
+                    <span class="pdf-card-size">${pdf.size_kb} KB</span>
+                </div>
+                <div class="pdf-card-arrow">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                        <path d="M9 18l6-6-6-6"/>
+                    </svg>
+                </div>
+            </button>
+        `).join('');
+    }
+
+    // ─── Select PDF & Load Questions ────────────────────────────────
+    window.__selectPDF = async function(filename, displayName) {
+        // Show loading state on the card
+        const card = document.querySelector(`[data-filename="${filename}"]`);
+        if (card) {
+            card.classList.add('loading');
+            card.querySelector('.pdf-card-arrow').innerHTML = '<div class="spinner-sm"></div>';
+        }
+
+        try {
+            const res = await fetch(`/api/questions/${encodeURIComponent(filename)}`);
+            const data = await res.json();
+
+            if (data.error) throw new Error(data.error);
+
+            state.questions = data.questions;
+            state.currentIndex = 0;
+            state.answers = {};
+            state.filename = filename;
+            state.displayName = data.display_name;
+
+            $('quiz-title').textContent = data.display_name;
+            updateStats();
+            renderQuestion();
+            showPage('quiz');
+        } catch (err) {
+            alert('Gagal memuat soal: ' + err.message);
+            if (card) {
+                card.classList.remove('loading');
+                card.querySelector('.pdf-card-arrow').innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                        <path d="M9 18l6-6-6-6"/>
+                    </svg>`;
+            }
+        }
+    };
+
+    // ─── Render Question ────────────────────────────────────────────
+    function renderQuestion() {
+        const q = state.questions[state.currentIndex];
+        if (!q) return;
+
+        const answered = state.answers.hasOwnProperty(state.currentIndex);
+        const userAnswer = state.answers[state.currentIndex];
+
+        // Question
+        $('question-number').textContent = `Soal ${q.number}`;
+        $('question-text').textContent = q.question;
+
+        // Animate card
+        const card = $('question-card');
+        card.classList.remove('animate-in');
+        void card.offsetWidth; // Force reflow
+        card.classList.add('animate-in');
+
+        // Choices
+        const container = $('choices-container');
+        container.innerHTML = q.choices.map((c, i) => {
+            let extraClass = '';
+            if (answered) {
+                if (c.label === q.correct_answer) extraClass = 'correct';
+                else if (c.label === userAnswer && c.label !== q.correct_answer) extraClass = 'incorrect';
+                else extraClass = 'dimmed';
+            }
+            return `
+                <button class="choice-btn ${extraClass}" 
+                        data-label="${c.label}" 
+                        ${answered ? 'disabled' : ''}
+                        style="animation-delay: ${i * 0.06}s"
+                        onclick="window.__selectAnswer('${c.label}')">
+                    <span class="choice-label">${c.label}</span>
+                    <span class="choice-text">${c.text}</span>
+                    ${answered && c.label === q.correct_answer ? '<span class="choice-check">✓</span>' : ''}
+                    ${answered && c.label === userAnswer && c.label !== q.correct_answer ? '<span class="choice-cross">✗</span>' : ''}
+                </button>`;
+        }).join('');
+
+        // Explanation
+        const panel = $('explanation-panel');
+        if (answered) {
+            const isCorrect = userAnswer === q.correct_answer;
+            panel.classList.add('visible');
+            panel.classList.toggle('correct', isCorrect);
+            panel.classList.toggle('incorrect', !isCorrect);
+            $('explanation-icon').innerHTML = isCorrect 
+                ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="22" height="22"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>'
+                : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="22" height="22"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+            $('explanation-title').textContent = isCorrect ? 'Jawaban Benar!' : `Jawaban Salah — Yang benar: ${q.correct_answer}`;
+            $('explanation-text').textContent = q.explanation;
+        } else {
+            panel.classList.remove('visible', 'correct', 'incorrect');
+        }
+
+        // Nav buttons
+        $('btn-prev').disabled = state.currentIndex === 0;
+        $('btn-next').textContent = state.currentIndex === state.questions.length - 1 ? 'Lihat Hasil' : '';
+        $('btn-next').innerHTML = state.currentIndex === state.questions.length - 1 
+            ? `Lihat Hasil <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`
+            : `Selanjutnya <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M9 18l6-6-6-6"/></svg>`;
+
+        updateStats();
+    }
+
+    // ─── Select Answer ──────────────────────────────────────────────
+    window.__selectAnswer = function(label) {
+        if (state.answers.hasOwnProperty(state.currentIndex)) return;
+        state.answers[state.currentIndex] = label;
+        renderQuestion();
+    };
+
+    // ─── Update Stats ───────────────────────────────────────────────
+    function updateStats() {
+        const total = state.questions.length;
+        const answered = Object.keys(state.answers).length;
+        const correct = Object.entries(state.answers).filter(
+            ([idx, ans]) => state.questions[parseInt(idx)].correct_answer === ans
+        ).length;
+
+        $('stat-progress').querySelector('span:last-child').textContent = `${answered}/${total}`;
+        $('stat-score').querySelector('span:last-child').textContent = `Skor: ${correct}`;
+
+        // Progress bar
+        const pct = total ? (answered / total * 100) : 0;
+        $('progress-bar').style.width = pct + '%';
+    }
+
+    // ─── Navigator Grid ────────────────────────────────────────────
+    function renderNavigator() {
+        const grid = $('navigator-grid');
+        grid.innerHTML = state.questions.map((q, i) => {
+            let status = 'unanswered';
+            if (i === state.currentIndex) status = 'current';
+            else if (state.answers.hasOwnProperty(i)) {
+                status = state.answers[i] === q.correct_answer ? 'correct' : 'incorrect';
+            }
+            return `<button class="nav-cell ${status}" onclick="window.__goToQuestion(${i})">${q.number}</button>`;
+        }).join('');
+    }
+
+    window.__goToQuestion = function(index) {
+        state.currentIndex = index;
+        renderQuestion();
+        $('navigator-overlay').classList.remove('visible');
+    };
+
+    // ─── Results Page ───────────────────────────────────────────────
+    function showResults() {
+        const total = state.questions.length;
+        const answered = Object.keys(state.answers).length;
+        const correct = Object.entries(state.answers).filter(
+            ([idx, ans]) => state.questions[parseInt(idx)].correct_answer === ans
+        ).length;
+        const incorrect = answered - correct;
+        const unanswered = total - answered;
+        const percent = total ? Math.round(correct / total * 100) : 0;
+
+        $('results-title').textContent = state.displayName;
+        $('result-correct').textContent = correct;
+        $('result-incorrect').textContent = incorrect;
+        $('result-unanswered').textContent = unanswered;
+        $('score-percent').textContent = percent + '%';
+
+        // Animate score ring
+        const circumference = 2 * Math.PI * 52; // r=52
+        const offset = circumference - (percent / 100 * circumference);
+        setTimeout(() => {
+            $('score-ring').style.strokeDashoffset = offset;
+        }, 300);
+
+        // Review list
+        const reviewHTML = state.questions.map((q, i) => {
+            const userAns = state.answers[i] || null;
+            const isCorrect = userAns === q.correct_answer;
+            const statusClass = !userAns ? 'review-unanswered' : (isCorrect ? 'review-correct' : 'review-incorrect');
+            const statusIcon = !userAns ? '○' : (isCorrect ? '✓' : '✗');
+            
+            return `
+                <div class="review-item ${statusClass}">
+                    <div class="review-item-header">
+                        <span class="review-status-icon">${statusIcon}</span>
+                        <span class="review-q-number">Soal ${q.number}</span>
+                        ${userAns ? `<span class="review-answer">Jawaban Anda: ${userAns} ${!isCorrect ? `| Benar: ${q.correct_answer}` : ''}</span>` : '<span class="review-answer">Belum Dijawab</span>'}
+                    </div>
+                    <p class="review-question">${q.question}</p>
+                    <div class="review-explanation">
+                        <strong>Penjelasan:</strong> ${q.explanation}
+                    </div>
+                </div>`;
+        }).join('');
+        $('review-list').innerHTML = reviewHTML;
+
+        showPage('results');
+    }
+
+    // ─── Event Listeners ────────────────────────────────────────────
+    $('btn-back').addEventListener('click', () => {
+        if (confirm('Kembali ke halaman utama? Progress akan hilang.')) {
+            showPage('landing');
+        }
+    });
+
+    $('btn-prev').addEventListener('click', () => {
+        if (state.currentIndex > 0) {
+            state.currentIndex--;
+            renderQuestion();
+        }
+    });
+
+    $('btn-next').addEventListener('click', () => {
+        if (state.currentIndex < state.questions.length - 1) {
+            state.currentIndex++;
+            renderQuestion();
+        } else {
+            showResults();
+        }
+    });
+
+    $('btn-navigator').addEventListener('click', () => {
+        renderNavigator();
+        $('navigator-overlay').classList.add('visible');
+    });
+
+    $('btn-close-nav').addEventListener('click', () => {
+        $('navigator-overlay').classList.remove('visible');
+    });
+
+    $('navigator-overlay').addEventListener('click', (e) => {
+        if (e.target === $('navigator-overlay')) {
+            $('navigator-overlay').classList.remove('visible');
+        }
+    });
+
+    $('btn-finish').addEventListener('click', () => {
+        $('navigator-overlay').classList.remove('visible');
+        showResults();
+    });
+
+    $('btn-retry').addEventListener('click', () => {
+        state.currentIndex = 0;
+        state.answers = {};
+        // Reset score ring
+        $('score-ring').style.strokeDashoffset = 326.73;
+        updateStats();
+        renderQuestion();
+        showPage('quiz');
+    });
+
+    $('btn-home').addEventListener('click', () => {
+        // Reset score ring
+        $('score-ring').style.strokeDashoffset = 326.73;
+        showPage('landing');
+        loadPDFList();
+    });
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+        if (!pages.quiz.classList.contains('active')) return;
+        if ($('navigator-overlay').classList.contains('visible')) return;
+
+        if (e.key === 'ArrowLeft' && state.currentIndex > 0) {
+            state.currentIndex--;
+            renderQuestion();
+        } else if (e.key === 'ArrowRight' && state.currentIndex < state.questions.length - 1) {
+            state.currentIndex++;
+            renderQuestion();
+        } else if (['a','b','c','d','A','B','C','D'].includes(e.key)) {
+            window.__selectAnswer(e.key.toUpperCase());
+        }
+    });
+
+    // ─── Init ───────────────────────────────────────────────────────
+    loadPDFList();
+
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.env
+venv/
+analyze_pdf.py
+test_parse.py
